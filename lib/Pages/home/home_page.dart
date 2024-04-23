@@ -1,6 +1,6 @@
+import 'package:chat_app/Pages/settings/Friends.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:chat_app/Pages/settings/Friends.dart';
 import 'package:chat_app/Pages/profile/profile.dart';
 import 'package:chat_app/Pages/search/search.dart';
 import 'package:chat_app/Pages/settings/setting.dart';
@@ -12,6 +12,9 @@ import '../../widgets/group_tile.dart';
 import '../Login/login.dart';
 
 class HomePage extends StatefulWidget {
+  HomePage({super.key});
+  final _auth = FirebaseAuth.instance;
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -20,62 +23,15 @@ class _HomePageState extends State<HomePage> {
   String userName = "";
   String email = "";
   AuthService authService = AuthService();
-  Future<List<dynamic>>? groupsFuture;
-  List<dynamic>? groups;
+  Stream? groups;
   bool _isLoading = false;
   String groupName = "";
-  List<dynamic>? filteredGroups;
+  String _searchQuery = "";
 
   @override
   void initState() {
     super.initState();
     gettingUserData();
-  }
-
-  gettingUserData() {
-    HelperFunctions.getUserEmailFromSF().then((value) {
-      setState(() {
-        email = value!;
-      });
-    });
-    HelperFunctions.getUserNameFromSF().then((val) {
-      setState(() {
-        userName = val!;
-      });
-    });
-    // getting the list of snapshots in our stream
-    DatabaseService(uid: FirebaseAuth.instance.currentUser!.uid)
-        .getUserGroups()
-        .then((snapshot) {
-      setState(() {
-        groupsFuture = snapshot;
-      });
-      // Resolve the Future and assign to groups when data is available
-      snapshot.then((data) {
-        setState(() {
-          groups = data;
-          if (data != null && data.isNotEmpty) {
-            filteredGroups = data;
-          }
-        });
-      }).catchError((error) {
-        print("Error fetching groups: $error");
-      });
-    }).catchError((error) {
-      print("Error fetching groups: $error");
-    });
-  }
-
-  // Search function
-  void searchGroups(String query) {
-    if (groups != null) {
-      setState(() {
-        filteredGroups = groups!
-            .where((group) =>
-                getName(group).toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      });
-    }
   }
 
   // string manipulation
@@ -85,6 +41,27 @@ class _HomePageState extends State<HomePage> {
 
   String getName(String res) {
     return res.substring(res.indexOf("_") + 1);
+  }
+
+  gettingUserData() async {
+    await HelperFunctions.getUserEmailFromSF().then((value) {
+      setState(() {
+        email = value!;
+      });
+    });
+    await HelperFunctions.getUserNameFromSF().then((val) {
+      setState(() {
+        userName = val!;
+      });
+    });
+    // getting the list of snapshots in our stream
+    await DatabaseService(uid: FirebaseAuth.instance.currentUser!.uid)
+        .getUserGroups()
+        .then((snapshot) {
+      setState(() {
+        groups = snapshot;
+      });
+    });
   }
 
   @override
@@ -111,22 +88,6 @@ class _HomePageState extends State<HomePage> {
           "Messaging Man",
           style: TextStyle(
               color: Colors.white, fontWeight: FontWeight.bold, fontSize: 27),
-        ),
-        // Search bar
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(50.0),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0),
-            child: TextField(
-              onChanged: searchGroups,
-              style: TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Search Groups',
-                hintStyle: TextStyle(color: Colors.white70),
-                border: InputBorder.none,
-              ),
-            ),
-          ),
         ),
       ),
       drawer: Drawer(
@@ -255,7 +216,25 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      body: groupList(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+          ),
+          Expanded(child: groupList()),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           popUpDialog(context);
@@ -362,31 +341,49 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget groupList() {
-    if (groupsFuture == null) {
-      return Center(
-        child: CircularProgressIndicator(
-          color: Theme.of(context).primaryColor,
-        ),
-      );
-    } else if (filteredGroups != null && filteredGroups!.isNotEmpty) {
-      return ListView.builder(
-        itemCount: filteredGroups!.length,
-        itemBuilder: (context, index) {
-          int reverseIndex = filteredGroups!.length - index - 1;
-          return GroupTile(
-            groupId: getId(filteredGroups![reverseIndex]),
-            groupName: getName(filteredGroups![reverseIndex]),
-            userName: userName,
+  groupList() {
+    return StreamBuilder(
+      stream: groups,
+      builder: (context, AsyncSnapshot snapshot) {
+        // make some checks
+        if (snapshot.hasData) {
+          if (snapshot.data['groups'] != null) {
+            if (snapshot.data['groups'].length != 0) {
+              // Filter groups based on search query
+              var filteredGroups = snapshot.data['groups'].where((group) {
+                String groupName = getName(group);
+                return groupName.toLowerCase().contains(_searchQuery);
+              }).toList();
+
+              return ListView.builder(
+                itemCount: filteredGroups.length,
+                itemBuilder: (context, index) {
+                  int reverseIndex = filteredGroups.length - index - 1;
+                  return GroupTile(
+                    groupId: getId(filteredGroups[reverseIndex]),
+                    groupName: getName(filteredGroups[reverseIndex]),
+                    userName: snapshot.data['fullName'],
+                  );
+                },
+              );
+            } else {
+              return noGroupWidget();
+            }
+          } else {
+            return noGroupWidget();
+          }
+        } else {
+          return Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).primaryColor,
+            ),
           );
-        },
-      );
-    } else {
-      return noGroupWidget();
-    }
+        }
+      },
+    );
   }
 
-  Widget noGroupWidget() {
+  noGroupWidget() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 25),
       child: Column(
