@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
@@ -128,8 +130,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _handleEditProfile(BuildContext context) {
-    // Add logic to handle edit profile button click
+  void _handleEditProfile(BuildContext context) async {
+    TextEditingController emailController = TextEditingController();
+
+    // Show a dialog with a form to edit the email address
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Email'),
+          content: TextField(
+            controller: emailController,
+            decoration: const InputDecoration(labelText: 'New Email Address'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Save'),
+              onPressed: () async {
+                String newEmail = emailController.text.trim();
+
+                // Validate email format
+                if (newEmail.isNotEmpty && newEmail.contains('@')) {
+                  // Update email address in Firebase Authentication
+                  await _user.updateEmail(newEmail);
+
+                  // Update email address in Firestore
+                  await _firestore
+                      .collection('users')
+                      .doc(_user.uid)
+                      .update({'email': newEmail});
+
+                  // Update UI
+                  setState(() {
+                    _userData['email'] = newEmail;
+                  });
+
+                  // Close dialog
+                  Navigator.of(context).pop();
+                } else {
+                  // Show error message for invalid email format
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Invalid email address')),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _handleAddStatus(BuildContext context) {
@@ -142,7 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 }
 
 void main() {
-  runApp(MaterialApp(
+  runApp(const MaterialApp(
     home: ProfileScreen(),
   ));
 }
