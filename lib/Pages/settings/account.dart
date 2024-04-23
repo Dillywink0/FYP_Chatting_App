@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AccountPage extends StatelessWidget {
   @override
@@ -15,13 +16,12 @@ class AccountPage extends StatelessWidget {
             children: [
               _buildAccountSection("Avatar", _buildAvatarSection()),
               const SizedBox(height: 16.0),
-              _buildAccountSection("Username", _buildUsernameSection()),
+              _buildAccountSection("Email", _buildEmailSection(context)),
               const SizedBox(height: 16.0),
-              _buildAccountSection("Discriminator", _buildDiscriminatorSection()),
+              _buildAccountSection(
+                  "Discriminator", _buildDiscriminatorSection()),
               const SizedBox(height: 16.0),
               _buildAccountSection("Phone Number", _buildPhoneNumberSection()),
-              const SizedBox(height: 16.0),
-              _buildAccountSection("Email", _buildEmailSection(context)),
               const SizedBox(height: 16.0),
               _buildAccountSection("Password", _buildPasswordSection(context)),
             ],
@@ -62,31 +62,41 @@ class AccountPage extends StatelessWidget {
     );
   }
 
-  Widget _buildUsernameSection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          "JohnDoe",
-          style: TextStyle(
-            fontSize: 16.0,
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            // Handle button click to change username
-          },
-          style: ElevatedButton.styleFrom(
-            primary: Colors.blue,
-          ),
-          child: const Text(
-            "Change",
-            style: TextStyle(
-              color: Colors.white,
+  Widget _buildEmailSection(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc().snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return CircularProgressIndicator(); // Placeholder while loading
+        }
+        var email = snapshot
+            .data!['email']; // Assuming 'email' is the field name in Firestore
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              email,
+              style: const TextStyle(
+                fontSize: 16.0,
+              ),
             ),
-          ),
-        ),
-      ],
+            ElevatedButton(
+              onPressed: () {
+                _handleChangeEmail(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+              ),
+              child: const Text(
+                "Change",
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -114,7 +124,7 @@ class AccountPage extends StatelessWidget {
             // Handle button click to change phone number
           },
           style: ElevatedButton.styleFrom(
-            primary: Colors.blue,
+            backgroundColor: Colors.blue,
           ),
           child: const Text(
             "Change",
@@ -125,40 +135,6 @@ class AccountPage extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  Widget _buildEmailSection(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          "john.doe@example.com",
-          style: TextStyle(
-            fontSize: 16.0,
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            _handleChangeEmail(context);
-          },
-          style: ElevatedButton.styleFrom(
-            primary: Colors.blue,
-          ),
-          child: const Text(
-            "Change",
-            style: TextStyle(
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _handleChangeEmail(BuildContext context) {
-    // Implement your logic to change email here
-    // For now, let's just print a message
-    print("Changing email...");
   }
 
   Widget _buildPasswordSection(BuildContext context) {
@@ -167,7 +143,7 @@ class AccountPage extends StatelessWidget {
         _handleChangePassword(context);
       },
       style: ElevatedButton.styleFrom(
-        primary: Colors.blue,
+        backgroundColor: Colors.blue,
       ),
       child: const Text(
         "Change Password",
@@ -176,6 +152,12 @@ class AccountPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _handleChangeEmail(BuildContext context) {
+    // Implement your logic to change email here
+    // For now, let's just print a message
+    print("Changing email...");
   }
 
   void _handleChangePassword(BuildContext context) {

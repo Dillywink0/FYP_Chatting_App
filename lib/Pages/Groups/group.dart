@@ -21,15 +21,23 @@ class GroupInfo extends StatefulWidget {
 }
 
 class ChatMessage {
+  final String id; // Unique ID for each message
   final String sender;
   final String text;
-  bool isMuted;
+  Map<String, bool> readStatus; // Map to track read status of each member
+  bool isMuted; // Define isMuted property
 
   ChatMessage({
+    required this.id,
     required this.sender,
     required this.text,
-    this.isMuted = false,
-  });
+    Map<String, bool>? readStatus,
+    this.isMuted = false, // Initialize isMuted to false by default
+  }) : this.readStatus = readStatus ?? {};
+
+  void markAsRead(String userId) {
+    readStatus[userId] = true;
+  }
 }
 
 class PinnedMessage {
@@ -58,9 +66,11 @@ class _GroupInfoState extends State<GroupInfo> {
   void loadMockMessages() {
     setState(() {
       messages = [
-        ChatMessage(sender: 'User1', text: 'Hello!', isMuted: false),
-        ChatMessage(sender: 'User2', text: 'Hi there!', isMuted: false),
-        ChatMessage(sender: 'User1', text: 'How are you?', isMuted: false),
+        ChatMessage(id: '1', sender: 'User1', text: 'Hello!', readStatus: {}),
+        ChatMessage(
+            id: '2', sender: 'User2', text: 'Hi there!', readStatus: {}),
+        ChatMessage(
+            id: '3', sender: 'User1', text: 'How are you?', readStatus: {}),
       ];
     });
   }
@@ -124,12 +134,20 @@ class _GroupInfoState extends State<GroupInfo> {
   }
 
   Widget buildMessage(ChatMessage message) {
+    bool isMessageRead =
+        message.readStatus[FirebaseAuth.instance.currentUser!.uid] ?? false;
+
     return ListTile(
       title: Text(message.sender),
       subtitle: Text(message.text),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (isMessageRead)
+            Icon(
+              Icons.done_all,
+              color: Colors.blue, // Change color based on your design
+            ),
           IconButton(
             icon: Icon(message.isMuted ? Icons.volume_off : Icons.volume_up),
             onPressed: () {
@@ -148,6 +166,10 @@ class _GroupInfoState extends State<GroupInfo> {
           ),
         ],
       ),
+      onTap: () {
+        // Mark message as read when tapped
+        markMessageAsRead(message);
+      },
     );
   }
 
@@ -166,7 +188,8 @@ class _GroupInfoState extends State<GroupInfo> {
                   String memberId = getId(snapshot.data['members'][index]);
 
                   return buildMessage(
-                    ChatMessage(sender: memberName, text: memberId),
+                    ChatMessage(
+                        id: memberId, sender: memberName, text: memberId),
                   );
                 },
               );
@@ -254,6 +277,19 @@ class _GroupInfoState extends State<GroupInfo> {
         );
       },
     );
+  }
+
+  void markMessageAsRead(ChatMessage message) {
+    message.markAsRead(FirebaseAuth.instance.currentUser!.uid);
+
+    FirebaseFirestore.instance
+        .collection('group_messages')
+        .doc(widget.groupId)
+        .collection('messages')
+        .doc(message.id) // Assuming each message has a unique ID
+        .update({
+      'readStatus.${FirebaseAuth.instance.currentUser!.uid}': true,
+    });
   }
 
   @override

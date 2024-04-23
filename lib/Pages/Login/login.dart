@@ -8,6 +8,7 @@ import '../../auth/database_service.dart';
 import '../../helper/helper_function.dart';
 import '../../widgets/widgets.dart';
 import '../Register/register.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -22,6 +23,8 @@ class _LoginPageState extends State<LoginPage> {
   String password = "";
   bool _isLoading = false;
   AuthService authService = AuthService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn googleSignIn = GoogleSignIn();
 
   @override
   Widget build(BuildContext context) {
@@ -121,6 +124,26 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(
                         height: 10,
                       ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              primary: Colors.red,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30))),
+                          child: const Text(
+                            "Sign In with Google",
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                          onPressed: () async {
+                            await signInWithGoogle();
+                          },
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
                       Text.rich(TextSpan(
                         text: "Don't have an account? ",
                         style:
@@ -169,6 +192,27 @@ class _LoginPageState extends State<LoginPage> {
           });
         }
       });
+    }
+  }
+
+  Future<UserCredential?> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleSignInAccount =
+          await googleSignIn.signIn();
+      if (googleSignInAccount != null) {
+        final GoogleSignInAuthentication googleSignInAuthentication =
+            await googleSignInAccount.authentication;
+        final AuthCredential googleCredential = GoogleAuthProvider.credential(
+          accessToken: googleSignInAuthentication.accessToken,
+          idToken: googleSignInAuthentication.idToken,
+        );
+        final UserCredential userCredential =
+            await _auth.signInWithCredential(googleCredential);
+        return userCredential;
+      }
+    } catch (error) {
+      print("Error signing in with Google: $error");
+      return null;
     }
   }
 }
