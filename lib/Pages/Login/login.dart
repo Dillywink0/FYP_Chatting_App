@@ -11,7 +11,7 @@ import '../Register/register.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({Key? key, required authService}) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();

@@ -124,9 +124,7 @@ class _HomePageState extends State<HomePage> {
               onTap: () async {
                 var updatedUser = await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => ProfileScreen()
-                  ),
+                  MaterialPageRoute(builder: (context) => ProfileScreen()),
                 );
                 // Check if the user details were updated
                 if (updatedUser != null && updatedUser is Map<String, String>) {
@@ -170,8 +168,7 @@ class _HomePageState extends State<HomePage> {
                   builder: (context) {
                     return AlertDialog(
                       title: const Text("Logout"),
-                      content:
-                          const Text("Are you sure you want to logout?"),
+                      content: const Text("Are you sure you want to logout?"),
                       actions: [
                         IconButton(
                           onPressed: () {
@@ -187,7 +184,9 @@ class _HomePageState extends State<HomePage> {
                             await authService.signOut();
                             Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(
-                                builder: (context) => const LoginPage(),
+                                builder: (context) => const LoginPage(
+                                  authService: null,
+                                ),
                               ),
                               (route) => false,
                             );
@@ -294,7 +293,10 @@ class _HomePageState extends State<HomePage> {
                     });
                     DatabaseService(
                       uid: FirebaseAuth.instance.currentUser!.uid,
-                    ).createGroup(userName, FirebaseAuth.instance.currentUser!.uid, groupName).whenComplete(() {
+                    )
+                        .createGroup(userName,
+                            FirebaseAuth.instance.currentUser!.uid, groupName)
+                        .whenComplete(() {
                       _isLoading = false;
                     });
                     Navigator.of(context).pop();
@@ -328,12 +330,10 @@ class _HomePageState extends State<HomePage> {
               return ListView.builder(
                 itemCount: snapshot.data['groups'].length,
                 itemBuilder: (context, index) {
-                  int reverseIndex =
-                      snapshot.data['groups'].length - index - 1;
+                  int reverseIndex = snapshot.data['groups'].length - index - 1;
                   return GroupTile(
                     groupId: getId(snapshot.data['groups'][reverseIndex]),
-                    groupName:
-                        getName(snapshot.data['groups'][reverseIndex]),
+                    groupName: getName(snapshot.data['groups'][reverseIndex]),
                     userName: snapshot.data['fullName'],
                   );
                 },

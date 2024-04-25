@@ -127,8 +127,10 @@ class _HomePageState extends State<HomePage> {
             ),
             ListTile(
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => ProfileScreen()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ProfileScreen()));
               },
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
@@ -190,7 +192,9 @@ class _HomePageState extends State<HomePage> {
                             await authService.signOut();
                             Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(
-                                builder: (context) => const LoginPage(),
+                                builder: (context) => const LoginPage(
+                                  authService: null,
+                                ),
                               ),
                               (route) => false,
                             );
@@ -256,6 +260,8 @@ class _HomePageState extends State<HomePage> {
       barrierDismissible: false,
       context: context,
       builder: (context) {
+        String _groupName = ''; // Declare a variable to hold the group name
+
         return StatefulBuilder(builder: ((context, setState) {
           return AlertDialog(
             title: const Text(
@@ -273,11 +279,12 @@ class _HomePageState extends State<HomePage> {
                     : TextField(
                         onChanged: (val) {
                           setState(() {
-                            groupName = val;
+                            _groupName = val; // Update the group name
                           });
                         },
                         style: const TextStyle(color: Colors.black),
                         decoration: InputDecoration(
+                          hintText: 'Enter group name', // Add a hint text
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(
                               color: Theme.of(context).primaryColor,
@@ -306,11 +313,11 @@ class _HomePageState extends State<HomePage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
                 ),
-                child: const Text("CANCEL"),
+                child: const Text("CANCEL"), // Text for the cancel button
               ),
               ElevatedButton(
                 onPressed: () async {
-                  if (groupName != "") {
+                  if (_groupName.isNotEmpty) {
                     setState(() {
                       _isLoading = true;
                     });
@@ -318,9 +325,11 @@ class _HomePageState extends State<HomePage> {
                       uid: FirebaseAuth.instance.currentUser!.uid,
                     )
                         .createGroup(userName,
-                            FirebaseAuth.instance.currentUser!.uid, groupName)
+                            FirebaseAuth.instance.currentUser!.uid, _groupName)
                         .whenComplete(() {
-                      _isLoading = false;
+                      setState(() {
+                        _isLoading = false; // Reset isLoading state
+                      });
                     });
                     Navigator.of(context).pop();
                     showSnackbar(
@@ -331,9 +340,9 @@ class _HomePageState extends State<HomePage> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Theme.of(context).primaryColor,
+                  backgroundColor: Theme.of(context).primaryColor,
                 ),
-                child: const Text("CREATE"),
+                child: const Text("CREATE"), // Text for the create button
               ),
             ],
           );

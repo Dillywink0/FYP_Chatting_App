@@ -14,7 +14,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(
@@ -22,13 +22,15 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (context) => AuthService()),
         ChangeNotifierProvider(create: (context) => ColorProvider()),
-        ChangeNotifierProvider(create: (context) => FontSizeProvider()), // Add FontSizeProvider
+        ChangeNotifierProvider(
+            create: (context) => FontSizeProvider()), // Add FontSizeProvider
         // Add other providers if needed
       ],
       child: const MyApp(),
     ),
   );
 }
+
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Handling background message: ${message.notification?.title}");
   // Handle background messages
@@ -43,14 +45,18 @@ class MyApp extends StatelessWidget {
       title: 'Chat App',
       theme: ThemeData.light(),
       routes: {
-        '/': (context) => LoginPage(),
-        '/login': (context) => const LoginPage(),
+        '/': (context) => const LoginPage(
+              authService: null,
+            ),
+        '/login': (context) => const LoginPage(
+              authService: null,
+            ),
         '/signup': (context) => const RegisterPage(),
         '/search': (context) => const SearchPage(),
         '/settings': (context) => const SettingsPage(),
-      //  '/chat': (context) => const ChatterScreen(),
-        '/profile': (context) => ProfileScreen()
-      //  '/chats': (context) => const ChatStream(),
+        //  '/chat': (context) => const ChatterScreen(),
+        '/profile': (context) => const ProfileScreen()
+        //  '/chats': (context) => const ChatStream(),
       },
     );
   }
