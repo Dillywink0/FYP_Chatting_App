@@ -1,16 +1,11 @@
 # chat_app
 
-A new Flutter project.
-
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+Firstly install and set up Flutter SDK 
 
-A few resources to get you started if this is your first Flutter project:
+After configuring the Flutter SDK, either clone the responsivity or download it and unzip the folder.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+There will be dependencies that may need to be re-installed on your machine.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Then to run the project, enter flutter run into the VScode terminal.
